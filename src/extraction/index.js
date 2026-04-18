@@ -22,6 +22,7 @@ async function runExtraction(input, timeoutMs) {
     classification.type,
     action_description,
     conversation_history,
+    input.user,
     timeoutMs
   );
 

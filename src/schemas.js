@@ -46,7 +46,7 @@ const ActionMetaSchema = z.object({
   intent_params: z.array(z.string()),
   param_descriptions: z.record(z.string()).default({}),
   intent_descriptions: z.record(z.string()).default({}),
-  risk_level: z.enum(["low", "medium", "high"]),
+  min_risk: z.enum(["low", "medium", "high"]),
   reversible: z.boolean(),
   affects_external: z.boolean(),
   requires_entity: z.boolean(),
@@ -72,7 +72,7 @@ const ACTION_META = {
       purpose: "The goal or reason for sending this email",
       recipient_relationship: "Relationship context, e.g. 'external partner', 'colleague'",
     },
-    risk_level: "high",
+    min_risk: "high",
     reversible: false,
     affects_external: true,
     requires_entity: false,
@@ -91,7 +91,7 @@ const ACTION_META = {
       purpose: "The reason for sending this reply",
       tone_rationale: "Why a particular tone is appropriate given the context",
     },
-    risk_level: "high",
+    min_risk: "high",
     reversible: false,
     affects_external: true,
     requires_entity: true,
@@ -110,7 +110,7 @@ const ACTION_META = {
       reason_for_forwarding: "Why this email is being forwarded",
       recipient_context: "Who the recipient is and why they are receiving this",
     },
-    risk_level: "high",
+    min_risk: "high",
     reversible: false,
     affects_external: true,
     requires_entity: true,
@@ -132,7 +132,7 @@ const ACTION_META = {
       purpose: "The goal of drafting this email",
       key_message: "The core message or ask the email should convey",
     },
-    risk_level: "low",
+    min_risk: "low",
     reversible: true,
     affects_external: false,
     requires_entity: false,
@@ -146,7 +146,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason: "Why the user wants to delete this email",
     },
-    risk_level: "medium",
+    min_risk: "medium",
     reversible: false,
     affects_external: false,
     requires_entity: true,
@@ -160,7 +160,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason: "Why the user wants to archive this email",
     },
-    risk_level: "low",
+    min_risk: "low",
     reversible: true,
     affects_external: false,
     requires_entity: true,
@@ -185,7 +185,7 @@ const ACTION_META = {
       purpose: "The reason for creating this event",
       attendee_context: "Who the attendees are and why they are being invited",
     },
-    risk_level: "medium",
+    min_risk: "medium",
     reversible: true,
     affects_external: true,
     requires_entity: false,
@@ -202,7 +202,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason_for_change: "Why this event needs to be updated",
     },
-    risk_level: "medium",
+    min_risk: "medium",
     reversible: true,
     affects_external: true,
     requires_entity: true,
@@ -218,7 +218,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason: "Why this event is being deleted",
     },
-    risk_level: "high",
+    min_risk: "high",
     reversible: false,
     affects_external: true,
     requires_entity: true,
@@ -236,7 +236,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason_for_change: "Why the event needs to be moved to a different time",
     },
-    risk_level: "high",
+    min_risk: "high",
     reversible: true,
     affects_external: true,
     requires_entity: true,
@@ -252,7 +252,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason: "Why the user is accepting this invite",
     },
-    risk_level: "low",
+    min_risk: "low",
     reversible: true,
     affects_external: true,
     requires_entity: true,
@@ -269,7 +269,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason: "Why the user is declining this invite",
     },
-    risk_level: "medium",
+    min_risk: "medium",
     reversible: false,
     affects_external: true,
     requires_entity: true,
@@ -290,7 +290,7 @@ const ACTION_META = {
     intent_descriptions: {
       purpose: "Why this task is being created",
     },
-    risk_level: "low",
+    min_risk: "low",
     reversible: true,
     affects_external: false,
     requires_entity: false,
@@ -304,7 +304,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason: "Why this task is being marked complete",
     },
-    risk_level: "low",
+    min_risk: "low",
     reversible: true,
     affects_external: false,
     requires_entity: true,
@@ -318,7 +318,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason: "Why this task is being deleted rather than completed",
     },
-    risk_level: "medium",
+    min_risk: "medium",
     reversible: false,
     affects_external: false,
     requires_entity: true,
@@ -334,7 +334,7 @@ const ACTION_META = {
     intent_descriptions: {
       reason_for_change: "Why the task details need to be updated",
     },
-    risk_level: "low",
+    min_risk: "low",
     reversible: true,
     affects_external: false,
     requires_entity: true,
@@ -352,7 +352,7 @@ const ACTION_META = {
     intent_descriptions: {
       purpose: "Why the user wants this reminder",
     },
-    risk_level: "low",
+    min_risk: "low",
     reversible: true,
     affects_external: false,
     requires_entity: false,
@@ -367,6 +367,19 @@ function buildActionSchema(type) {
   fields.reasoning = z
     .string()
     .describe("Overall reasoning about the action and what could be extracted from the conversation");
+
+  fields.effective_risk_reasoning = z
+    .string()
+    .nullable()
+    .describe("Your reasoning for the effective risk level, considering conversation context and user state. The floor is the action's min_risk — you may only raise it, never lower it below that floor.");
+  fields.effective_risk_evidence = z
+    .string()
+    .nullable()
+    .describe("A verbatim quote from the conversation that justifies a risk level above the min_risk floor. Set to null if the min_risk floor alone determines the risk.");
+  fields.effective_risk = z
+    .enum(["low", "medium", "high"])
+    .nullable()
+    .describe("The effective risk level after considering context. Must be >= min_risk. If uncertain, use the min_risk floor.");
 
   if (meta.requires_entity) {
     fields.entity_id_reasoning = z
