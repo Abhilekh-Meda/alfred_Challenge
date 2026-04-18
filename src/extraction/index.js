@@ -10,15 +10,22 @@ async function runExtraction(input, timeoutMs) {
     timeoutMs
   );
 
+  const classificationTrace = {
+    prompt: classification.prompt,
+    raw: classification.raw,
+    parsed: { type: classification.type, reasoning: classification.reasoning },
+  };
+
   if (classification.type === "none") {
     return {
       type: "none",
-      classification_reasoning: classification.reasoning,
+      classification: classificationTrace,
+      extraction: null,
       extracted_action: null,
     };
   }
 
-  const extracted_action = await extractActionSchema(
+  const extractionResult = await extractActionSchema(
     classification.type,
     action_description,
     conversation_history,
@@ -26,10 +33,19 @@ async function runExtraction(input, timeoutMs) {
     timeoutMs
   );
 
+  const { prompt, raw, type, ...actionFields } = extractionResult;
+
+  const extractionTrace = {
+    prompt,
+    raw,
+    parsed: actionFields,
+  };
+
   return {
     type: classification.type,
-    classification_reasoning: classification.reasoning,
-    extracted_action,
+    classification: classificationTrace,
+    extraction: extractionTrace,
+    extracted_action: { type, ...actionFields },
   };
 }
 

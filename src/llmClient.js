@@ -26,11 +26,11 @@ async function call({ model, messages, schema, timeoutMs = DEFAULT_TIMEOUT_MS })
   );
 
   const response = await Promise.race([request, timeout]);
-  const parsed = response.choices[0].message.parsed;
+  const message = response.choices[0].message;
 
-  if (!parsed) throw new Error("Malformed model output: no parsed response");
+  if (!message.parsed) throw new Error("Malformed model output: no parsed response");
 
-  return parsed;
+  return { parsed: message.parsed, raw: message.content };
 }
 
 const llm = {

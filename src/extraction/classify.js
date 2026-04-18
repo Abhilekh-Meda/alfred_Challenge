@@ -36,21 +36,18 @@ Proposed action: ${actionDescription}`,
 }
 
 async function identifyActionType(actionDescription, conversationHistory, timeoutMs) {
-  const { system, user } = buildTypeClassificationPrompt(
-    actionDescription,
-    conversationHistory
-  );
+  const prompt = buildTypeClassificationPrompt(actionDescription, conversationHistory);
 
-  const result = await llm.small({
+  const { parsed, raw } = await llm.small({
     messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
+      { role: "system", content: prompt.system },
+      { role: "user", content: prompt.user },
     ],
     schema: ActionTypeResultSchema,
     timeoutMs,
   });
 
-  return result;
+  return { ...parsed, prompt, raw };
 }
 
 module.exports = { identifyActionType };

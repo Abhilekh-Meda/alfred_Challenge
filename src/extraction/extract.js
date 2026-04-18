@@ -54,7 +54,7 @@ async function extractActionSchema(type, actionDescription, conversationHistory,
   const schema = buildActionSchema(type, applicablePolicies);
   const { system, user: userPrompt } = buildExtractionPrompt(type, actionDescription, conversationHistory, user, applicablePolicies);
 
-  const result = await llm.large({
+  const { parsed, raw } = await llm.large({
     messages: [
       { role: "system", content: system },
       { role: "user", content: userPrompt },
@@ -64,12 +64,13 @@ async function extractActionSchema(type, actionDescription, conversationHistory,
   });
 
   const meta = ACTION_META[type];
-  const llmRisk = result.effective_risk;
+  const llmRisk = parsed.effective_risk;
   const floor = meta.min_risk;
   const effective_risk =
     llmRisk == null || RISK_ORDER[llmRisk] < RISK_ORDER[floor] ? floor : llmRisk;
 
-  return { type, ...result, effective_risk };
+  const prompt = { system, user: userPrompt };
+  return { type, ...parsed, effective_risk, prompt, raw };
 }
 
 module.exports = { extractActionSchema };
