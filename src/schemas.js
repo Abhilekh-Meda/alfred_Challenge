@@ -359,7 +359,7 @@ const ACTION_META = {
   },
 };
 
-function buildActionSchema(type) {
+function buildActionSchema(type, applicablePolicies = []) {
   const meta = ACTION_META[type];
   const allParams = [...meta.required_params, ...meta.optional_params];
   const fields = {};
@@ -426,6 +426,29 @@ function buildActionSchema(type) {
       .string()
       .nullable()
       .describe(`${desc} Set to null if evidence is null.`);
+  }
+
+  if (applicablePolicies.length > 0) {
+    const policyList = applicablePolicies
+      .map((p) => `- ${p.id}: ${p.description}`)
+      .join("\n");
+
+    fields.policy_violation_reasoning = z
+      .string()
+      .nullable()
+      .describe(
+        "Your reasoning for whether any applicable policy is violated by this action given the conversation"
+      );
+    fields.policy_violation_evidence = z
+      .string()
+      .nullable()
+      .describe(
+        "A verbatim quote from the conversation that supports a policy violation. Set to null if no policy is violated."
+      );
+    fields.policy_violation = z
+      .string()
+      .nullable()
+      .describe(`The id of the violated policy, or null if none. Applicable policies:\n${policyList}`);
   }
 
   return z.object(fields);
