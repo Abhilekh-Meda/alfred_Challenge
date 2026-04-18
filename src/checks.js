@@ -1,24 +1,26 @@
 const { ACTION_META } = require("./schemas");
 
+function isResolved(action, field) {
+  const hasEvidence = action[`${field}_evidence`] != null;
+  const hasValue = action[field] != null;
+  return hasEvidence && hasValue;
+}
+
 function checkEntity(action) {
   const meta = ACTION_META[action.type];
   if (!meta.requires_entity) return { entity_resolved: true };
-  return { entity_resolved: action.entity_id !== null };
+  return { entity_resolved: isResolved(action, "entity_id") };
 }
 
 function checkParams(action) {
   const meta = ACTION_META[action.type];
-  const missing = meta.required_params.filter(
-    (p) => action.params[p] === null || action.params[p] === undefined
-  );
+  const missing = meta.required_params.filter((p) => !isResolved(action, p));
   return { missing_params: missing };
 }
 
 function checkIntent(action) {
   const meta = ACTION_META[action.type];
-  const unresolved = meta.intent_params.filter(
-    (p) => action.intent[p] === null || action.intent[p] === undefined
-  );
+  const unresolved = meta.intent_params.filter((p) => !isResolved(action, p));
   return { intent_clear: unresolved.length === 0, unresolved_intent_params: unresolved };
 }
 
