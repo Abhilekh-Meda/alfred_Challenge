@@ -1,0 +1,25 @@
+{
+  "name": "alfred_challenge",
+  "version": "1.0.0",
+  "description": "Execution Decisions layer for alfred_",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abhilekh-Meda/alfred_Challenge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Abhilekh-Meda/alfred_Challenge/issues"
+  },
+  "homepage": "https://github.com/Abhilekh-Meda/alfred_Challenge#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "zod": "^4.3.6"
+  }
+}
