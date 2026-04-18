@@ -23,22 +23,6 @@ const ACTION_TYPES = [
   "set_reminder",
 ];
 
-// Stage 1 output — action type identification only
-const ActionTypeSchema = z.object({
-  type: z.enum(ACTION_TYPES),
-});
-
-// Stage 2 output — loose container for the extracted action
-// strict per-type shape is built dynamically via buildActionSchema(type)
-const ActionSchema = z.object({
-  type: z.enum(ACTION_TYPES),
-  params: z.record(z.string().nullable()),
-  // null for creation actions (send_email, create_event, create_task, set_reminder, draft_email)
-  // which target nothing pre-existing
-  entity_id: z.string().nullable(),
-  intent: z.record(z.string().nullable()),
-});
-
 const ActionMetaSchema = z.object({
   description: z.string(),
   required_params: z.array(z.string()),
@@ -454,17 +438,6 @@ function buildActionSchema(type, applicablePolicies = []) {
   return z.object(fields);
 }
 
-const SignalsSchema = z.object({
-  base_risk: z.enum(["low", "medium", "high"]),
-  context_risk_factors: z.array(z.string()),
-  effective_risk: z.enum(["low", "medium", "high"]),
-  intent_clear: z.boolean(),
-  missing_params: z.array(z.string()),
-  has_pending_hold: z.boolean(),
-  affects_external: z.boolean(),
-  is_reversible: z.boolean(),
-});
-
 const MessageSchema = z.object({
   role: z.enum(["user", "alfred"]),
   content: z.string(),
@@ -482,27 +455,10 @@ const DecisionInputSchema = z.object({
   user: UserSchema,
 });
 
-const DecisionOutputSchema = z.object({
-  thinking: z.string(),
-  outcome: z.enum([
-    "execute_silently",
-    "execute_and_notify",
-    "confirm_before_executing",
-    "ask_clarifying_question",
-    "refuse",
-  ]),
-  rationale: z.string(),
-  message_to_user: z.string(),
-});
-
 module.exports = {
   ACTION_TYPES,
-  ActionTypeSchema,
-  ActionSchema,
   ActionMetaSchema,
   ACTION_META,
   buildActionSchema,
-  SignalsSchema,
   DecisionInputSchema,
-  DecisionOutputSchema,
 };

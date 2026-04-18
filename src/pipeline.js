@@ -37,8 +37,16 @@ async function runPipeline(input, timeoutMs) {
     });
   }
 
-  const signals = computeSignals(extraction.extracted_action);
-  const { outcome, rationale } = route(signals);
+  let signals, outcome, rationale;
+  try {
+    signals = computeSignals(extraction.extracted_action);
+    ({ outcome, rationale } = route(signals));
+  } catch (err) {
+    return errorResponse(input, "internal_error", err.message, {
+      classification: extraction.classification,
+      extraction: extraction.extraction,
+    });
+  }
 
   return {
     input,
