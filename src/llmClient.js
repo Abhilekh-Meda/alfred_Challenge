@@ -11,26 +11,52 @@ const MODELS = {
 };
 
 const DEFAULT_TIMEOUT_MS = 10000;
+const MAX_ATTEMPTS = 3;
+const BACKOFF_BASE_MS = 1000;
+const TIMEOUT_TEMP_BUMP = 0.1;
 
 const client = new OpenAI();
 
-async function call({ model, messages, schema, timeoutMs = DEFAULT_TIMEOUT_MS }) {
-  const request = client.chat.completions.parse({
-    model,
-    messages,
-    response_format: zodResponseFormat(schema, "response"),
-  });
+function llmError(type, message, extra = {}) {
+  return Object.assign(new Error(message), { type, ...extra });
+}
 
-  const timeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("LLM request timed out")), timeoutMs)
-  );
+async function call({ model, messages, schema, timeoutMs = DEFAULT_TIMEOUT_MS, temperature = 0, _attempt = 0 }) {
+  try {
+    const request = client.chat.completions.parse({
+      model,
+      messages,
+      temperature,
+      response_format: zodResponseFormat(schema, "response"),
+    });
 
-  const response = await Promise.race([request, timeout]);
-  const message = response.choices[0].message;
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(llmError("timeout", "LLM request timed out")), timeoutMs)
+    );
 
-  if (!message.parsed) throw new Error("Malformed model output: no parsed response");
+    const response = await Promise.race([request, timeout]);
+    const message = response.choices[0].message;
 
-  return { parsed: message.parsed, raw: message.content };
+    if (message.refusal) {
+      throw llmError("model_refusal", "Model refused to answer", { refusal: message.refusal });
+    }
+
+    if (!message.parsed) {
+      throw llmError("malformed_output", "Model returned unparseable output");
+    }
+
+    return { parsed: message.parsed, raw: message.content };
+
+  } catch (err) {
+    if (err.type === "timeout" && _attempt < MAX_ATTEMPTS - 1) {
+      await new Promise(r => setTimeout(r, BACKOFF_BASE_MS * Math.pow(2, _attempt)));
+      // Low-temperature models can get stuck generating repeated tokens indefinitely.
+      // A small temperature increase on each timeout retry breaks this pattern
+      // without meaningfully degrading structured output quality.
+      return call({ model, messages, schema, timeoutMs, temperature: temperature + TIMEOUT_TEMP_BUMP, _attempt: _attempt + 1 });
+    }
+    throw err;
+  }
 }
 
 const llm = {
