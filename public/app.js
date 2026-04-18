@@ -399,7 +399,7 @@ function renderTrace(result) {
 
 function stageDidNotRun(title) {
   return `
-    <details class="stage">
+    <details class="stage" open>
       <summary>${escapeHtml(title)}</summary>
       <div class="stage-body"><div class="did-not-run">— did not run —</div></div>
     </details>
@@ -549,6 +549,7 @@ function renderTripletCard({ field, value, reasoning, evidence }) {
 function onScenarioClick(scenario) {
   customMode = false;
   jsonMode = false;
+  hideFailureTimeline();
   currentInput = deepClone(scenario.input);
   setActiveButton(scenario.id);
   renderExplainer({
@@ -574,22 +575,96 @@ async function onFailureDemoClick(kind) {
     explanation: failureExplanation(kind),
   });
 
+  let body;
   if (kind === "missing_context") {
     currentInput = { action_description: "", conversation_history: [] };
-    renderInput(currentInput);
-    await runAndRender({ input: currentInput });
-    return;
+    body = { input: currentInput };
+  } else {
+    const base = scenarios.find((s) => s.id === "pending_hold_override") ?? scenarios[0];
+    currentInput = deepClone(base.input);
+    body = { input: currentInput, simulate: kind };
   }
-
-  const base = scenarios.find((s) => s.id === "pending_hold_override") ?? scenarios[0];
-  currentInput = deepClone(base.input);
   renderInput(currentInput);
-  await runAndRender({ input: currentInput, simulate: kind });
+
+  const token = showFailureTimeline(kind);
+  const animation = animateFailureTimeline(kind, token);
+  await runAndRender(body);
+  await animation;
 }
+
+// ── failure timeline ──────────────────────────────────
+const TIMELINE_SCRIPTS = {
+  timeout: [
+    { label: "Validating input shape",                              duration: 40,   finalStatus: "done" },
+    { label: "Stage 1 — LLM attempt 1/3 (50ms timeout)",            duration: 80,   finalStatus: "failed" },
+    { label: "Backoff 1000ms · temperature += 0.1",                 duration: 1000, finalStatus: "done" },
+    { label: "Stage 1 — LLM attempt 2/3 (50ms timeout)",            duration: 80,   finalStatus: "failed" },
+    { label: "Backoff 2000ms · temperature += 0.1",                 duration: 2000, finalStatus: "done" },
+    { label: "Stage 1 — LLM attempt 3/3 (50ms timeout)",            duration: 80,   finalStatus: "failed" },
+    { label: "Retries exhausted → return typed error (refuse)",     duration: 40,   finalStatus: "failed" },
+  ],
+  missing_context: [
+    { label: "Request received at /api/decide",                         duration: 80,  finalStatus: "done" },
+    { label: "Validating action_description — EMPTY",                   duration: 80,  finalStatus: "failed" },
+    { label: "Short-circuit: skip LLM, return refuse (missing_context)", duration: 60, finalStatus: "failed" },
+  ],
+  malformed: [
+    { label: "Request received at /api/decide",                         duration: 80, finalStatus: "done" },
+    { label: "simulate=malformed detected at server boundary",          duration: 80, finalStatus: "done" },
+    { label: "Inject synthetic malformed_output error (refuse)",        duration: 60, finalStatus: "failed" },
+  ],
+};
+
+let timelineToken = 0;
+
+function showFailureTimeline(kind) {
+  const card = $("#failure-timeline");
+  const body = $("#failure-timeline-body");
+  card.classList.remove("hidden");
+  const token = ++timelineToken;
+  const steps = TIMELINE_SCRIPTS[kind] ?? [];
+  body.dataset.token = String(token);
+  body.innerHTML = steps
+    .map((s, i) => `
+      <div class="timeline-step" data-status="pending" data-idx="${i}">
+        <span class="timeline-icon">⋯</span>
+        <span class="timeline-label">${escapeHtml(s.label)}</span>
+        <span class="timeline-duration">${s.duration}ms</span>
+      </div>
+    `)
+    .join("");
+  return token;
+}
+
+function hideFailureTimeline() {
+  timelineToken++;
+  $("#failure-timeline").classList.add("hidden");
+  $("#failure-timeline-body").innerHTML = "";
+}
+
+async function animateFailureTimeline(kind, token) {
+  const steps = TIMELINE_SCRIPTS[kind] ?? [];
+  const body = $("#failure-timeline-body");
+  for (let i = 0; i < steps.length; i++) {
+    if (Number(body.dataset.token) !== token) return;
+    const el = body.querySelector(`.timeline-step[data-idx="${i}"]`);
+    if (!el) return;
+    el.dataset.status = "running";
+    el.querySelector(".timeline-icon").textContent = "↻";
+    await sleep(steps[i].duration);
+    if (Number(body.dataset.token) !== token) return;
+    el.dataset.status = steps[i].finalStatus;
+    el.querySelector(".timeline-icon").textContent =
+      steps[i].finalStatus === "failed" ? "✗" : "✓";
+  }
+}
+
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 function onCustomNewClick() {
   customMode = true;
   jsonMode = false;
+  hideFailureTimeline();
   currentInput = {
     action_description: "",
     conversation_history: [{ role: "user", content: "" }],
