@@ -8,7 +8,11 @@ function route(signals) {
     };
   }
 
-  if (clarity.needs_clarification) {
+  const hardClarityBlocked =
+    !clarity.entity_resolved ||
+    clarity.missing_params.length > 0;
+
+  if (hardClarityBlocked) {
     const reasons = [];
     if (!clarity.entity_resolved) reasons.push("the target entity is unresolved");
     if (clarity.missing_params.length > 0)
@@ -37,10 +41,16 @@ function route(signals) {
     };
   }
 
-  // execute_silently vs execute_and_notify — deferred
+  if (risk.effective_risk === "low" && !risk.affects_external && !risk.risk_elevated) {
+    return {
+      outcome: "execute_silently",
+      rationale: "Low risk, internal action, no contextual concerns — no need to interrupt.",
+    };
+  }
+
   return {
     outcome: "execute_and_notify",
-    rationale: "Intent is clear, risk is within threshold, no policy flags.",
+    rationale: "Action is within execution threshold but warrants notification — either external, risk was elevated by context, or medium risk.",
   };
 }
 
