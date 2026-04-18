@@ -15,7 +15,7 @@ const DEFAULT_TIMEOUT_MS = 10000;
 const client = new OpenAI();
 
 async function call({ model, messages, schema, timeoutMs = DEFAULT_TIMEOUT_MS }) {
-  const request = client.beta.chat.completions.parse({
+  const request = client.chat.completions.parse({
     model,
     messages,
     response_format: zodResponseFormat(schema, "response"),

@@ -41,6 +41,7 @@ const ActionSchema = z.object({
 
 
 const ActionMetaSchema = z.object({
+  description: z.string(),
   required_params: z.array(z.string()),
   optional_params: z.array(z.string()),
   intent_params: z.array(z.string()),
@@ -53,6 +54,7 @@ const ActionMetaSchema = z.object({
 const ACTION_META = {
   // --- email ---
   send_email: {
+    description: "Compose and send a new email to a recipient",
     required_params: ["recipient", "subject", "body"],
     optional_params: ["cc", "bcc", "tone", "send_at"],
     intent_params: ["purpose", "recipient_relationship"],
@@ -62,6 +64,7 @@ const ACTION_META = {
     requires_entity: false,
   },
   reply_email: {
+    description: "Send a reply to an existing email",
     required_params: ["body"],
     optional_params: ["tone", "cc"],
     intent_params: ["purpose", "tone_rationale"],
@@ -71,6 +74,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   forward_email: {
+    description: "Forward an existing email to another recipient",
     required_params: ["recipient"],
     optional_params: ["note", "cc"],
     intent_params: ["reason_for_forwarding", "recipient_context"],
@@ -80,6 +84,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   draft_email: {
+    description: "Compose a draft email without sending it",
     required_params: ["recipient", "subject", "intent"],
     optional_params: ["tone", "key_points", "cc"],
     intent_params: ["purpose", "key_message"],
@@ -89,6 +94,7 @@ const ACTION_META = {
     requires_entity: false,
   },
   delete_email: {
+    description: "Permanently delete an existing email",
     required_params: [],
     optional_params: [],
     intent_params: ["reason"],
@@ -98,6 +104,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   archive_email: {
+    description: "Archive an existing email to remove it from the inbox",
     required_params: [],
     optional_params: [],
     intent_params: ["reason"],
@@ -109,6 +116,7 @@ const ACTION_META = {
 
   // --- calendar ---
   create_event: {
+    description: "Create a new calendar event",
     required_params: ["title", "start_time", "end_time"],
     optional_params: ["attendees", "location", "description", "recurrence"],
     intent_params: ["purpose", "attendee_context"],
@@ -118,6 +126,7 @@ const ACTION_META = {
     requires_entity: false,
   },
   update_event: {
+    description: "Modify the details of an existing calendar event",
     required_params: ["changes"],
     optional_params: ["notify_attendees"],
     intent_params: ["reason_for_change"],
@@ -127,6 +136,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   delete_event: {
+    description: "Permanently delete an existing calendar event",
     required_params: [],
     optional_params: ["notify_attendees"],
     intent_params: ["reason"],
@@ -136,6 +146,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   reschedule_event: {
+    description: "Move an existing calendar event to a new time",
     required_params: ["new_time"],
     optional_params: ["notify_attendees", "reason"],
     intent_params: ["reason_for_change"],
@@ -145,6 +156,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   accept_invite: {
+    description: "Accept a calendar invite from another person",
     required_params: [],
     optional_params: ["message"],
     intent_params: ["reason"],
@@ -154,6 +166,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   decline_invite: {
+    description: "Decline a calendar invite from another person",
     required_params: [],
     optional_params: ["reason", "message"],
     intent_params: ["reason"],
@@ -165,6 +178,7 @@ const ACTION_META = {
 
   // --- tasks & reminders ---
   create_task: {
+    description: "Create a new task or to-do item",
     required_params: ["description"],
     optional_params: ["due_date", "priority", "project"],
     intent_params: ["purpose"],
@@ -174,6 +188,7 @@ const ACTION_META = {
     requires_entity: false,
   },
   complete_task: {
+    description: "Mark an existing task as completed",
     required_params: [],
     optional_params: [],
     intent_params: ["reason"],
@@ -183,6 +198,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   delete_task: {
+    description: "Permanently delete an existing task",
     required_params: [],
     optional_params: [],
     intent_params: ["reason"],
@@ -192,6 +208,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   update_task: {
+    description: "Modify the details of an existing task",
     required_params: ["changes"],
     optional_params: [],
     intent_params: ["reason_for_change"],
@@ -201,6 +218,7 @@ const ACTION_META = {
     requires_entity: true,
   },
   set_reminder: {
+    description: "Set a reminder to notify the user at a specific time",
     required_params: ["description", "time"],
     optional_params: ["recurrence"],
     intent_params: ["purpose"],
