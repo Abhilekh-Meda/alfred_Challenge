@@ -1,19 +1,7 @@
 const { runExtraction } = require("./extraction");
 const { computeSignals } = require("./signals");
 const { route } = require("./router");
-
-function errorResponse(input, error, rationale, extra = {}) {
-  return {
-    input,
-    error,
-    outcome: "refuse",
-    rationale,
-    classification: null,
-    extraction: null,
-    signals: null,
-    ...extra,
-  };
-}
+const { errorResponse } = require("./errorResponse");
 
 async function runPipeline(input, timeoutMs) {
   if (!input.action_description?.trim()) {

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>alfred_ Execution Decision Layer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>alfred_ <span class="subtle">Execution Decision Layer</span></h1>
+    <p class="tagline">Pick a scenario. Hit run. Look under the hood.</p>
+  </header>
+
+  <main>
+    <aside id="sidebar">
+      <section data-group="custom">
+        <h2>Test your own case</h2>
+        <div class="custom-list">
+          <button data-custom="new" data-category="custom">+ New custom input</button>
+        </div>
+      </section>
+      <section data-group="clear">
+        <h2>Clear</h2>
+        <div class="scenario-list" data-category="clear"></div>
+      </section>
+      <section data-group="ambiguous">
+        <h2>Ambiguous</h2>
+        <div class="scenario-list" data-category="ambiguous"></div>
+      </section>
+      <section data-group="adversarial">
+        <h2>Adversarial</h2>
+        <div class="scenario-list" data-category="adversarial"></div>
+      </section>
+      <section data-group="failures">
+        <h2>Failure demos</h2>
+        <div class="failure-list">
+          <button data-failure="missing_context">Missing context</button>
+          <button data-failure="timeout">Simulated timeout</button>
+          <button data-failure="malformed">Simulated malformed output</button>
+        </div>
+      </section>
+    </aside>
+
+    <section id="workspace">
+      <div id="explainer" class="card hidden"></div>
+
+      <div id="input-view" class="card">
+        <div class="card-head">
+          <h2>Input</h2>
+          <div class="card-actions">
+            <button id="toggle-edit" type="button">Edit as JSON</button>
+            <button id="run" type="button" class="primary">Run</button>
+          </div>
+        </div>
+        <div id="action-description"></div>
+        <div id="conversation"></div>
+        <textarea id="input-json" hidden spellcheck="false"></textarea>
+        <div id="input-error" class="error-banner hidden"></div>
+      </div>
+
+      <div id="decision" class="card">
+        <h2>Decision</h2>
+        <div id="decision-body" class="muted">Run a scenario to see a decision.</div>
+      </div>
+
+      <div id="signals" class="card">
+        <h2>Signals</h2>
+        <div id="signals-body" class="muted">—</div>
+      </div>
+
+      <div id="trace" class="card">
+        <h2>Under the hood</h2>
+        <div id="trace-body" class="muted">—</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
