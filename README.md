@@ -2,7 +2,7 @@
 
 Given a proposed action plus conversation context, decide whether alfred_ should execute silently, execute and notify, confirm first, ask a clarifying question, or refuse.
 
-- **Live demo:** _(pending deploy)_
+- **Live demo:** https://alfred-challenge.onrender.com/
 - **Repo:** https://github.com/Abhilekh-Meda/alfred_Challenge
 
 Run locally:
@@ -14,7 +14,7 @@ OPENAI_API_KEY=sk-... npm start
 
 Then open http://localhost:3000.
 
-For the public demo, use the password from my email and paste into the "Demo password" field (the LLM api is not exposed without it).
+For the public demo, paste the demo password into the **Demo password** field and click **Apply** (the API is gated; nothing runs until the key matches).
 
 ---
 
