@@ -14,6 +14,8 @@ OPENAI_API_KEY=sk-... npm start
 
 Then open http://localhost:3000.
 
+For the public demo, use the password from my email and paste into the "Demo password" field (the LLM api is not exposed without it).
+
 ---
 
 ## 1. Scope: where I drew the line

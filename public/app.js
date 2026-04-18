@@ -815,5 +815,11 @@ async function init() {
   $$(".custom-list button").forEach((btn) => {
     btn.addEventListener("click", onCustomNewClick);
   });
+  $("#about-toggle").addEventListener("click", () => {
+    const panel = $("#about-panel");
+    const btn = $("#about-toggle");
+    const hidden = panel.classList.toggle("hidden");
+    btn.classList.toggle("active", !hidden);
+  });
 }
 init();

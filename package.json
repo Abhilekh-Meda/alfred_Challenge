@@ -4,7 +4,8 @@
   "description": "Execution Decisions layer for alfred_",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/demo-auth.test.js test/integration-server.test.js test/pipeline.test.js"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
     "@anthropic-ai/sdk": "^0.90.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
     "openai": "^6.34.0",
     "zod": "^4.3.6"
   }

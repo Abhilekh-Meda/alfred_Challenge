@@ -9,7 +9,22 @@
 <body>
   <header>
     <h1>alfred_ <span class="subtle">Execution Decision Layer</span></h1>
-    <p class="tagline">Pick a scenario. Hit run. Look under the hood.</p>
+    <p class="tagline">
+      Pick a scenario. Hit run. Look under the hood.
+      <button id="about-toggle" type="button" class="about-icon" title="About this prototype" aria-label="About this prototype">i</button>
+    </p>
+    <div id="about-panel" class="about-panel hidden">
+      <h3>About this prototype</h3>
+      <p>
+        This is the <strong>decision layer</strong>: given a proposed action plus pre-shaped context, it returns a routing verdict (execute silently, execute and notify, confirm, ask clarifying, or refuse) with a concise rationale.
+      </p>
+      <p>
+        The <strong>context pipeline</strong> (conversation history + user state → populated task schema) is deliberately stubbed. Preloaded scenarios hand in pre-shaped inputs; the custom form lets you build a conversation by hand. In production, <code>entity_id</code> would come from retrieval; policies would be composable; user trust would be learned per-user. See the <a href="https://github.com/Abhilekh-Meda/alfred_Challenge#readme" target="_blank" rel="noopener">README</a> for the full scope writeup.
+      </p>
+      <p class="about-principle">
+        Design principle: <em>we control the schema, the LLM populates it, we control what to do with it.</em>
+      </p>
+    </div>
   </header>
 
   <main>
