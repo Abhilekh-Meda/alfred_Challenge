@@ -3,6 +3,8 @@ let scenarios = [];
 let currentInput = null;
 let customMode = false;
 let jsonMode = false;
+let authRequired = false;
+let bootstrapped = false;
 
 const CATEGORY_LABEL = {
   clear: "Clear",
@@ -17,18 +19,96 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 // ── api ───────────────────────────────────────────────
+const fetchOpts = { credentials: "same-origin" };
+
+function getDemoPasswordForRequest() {
+  const el = $("#demo-password-bar");
+  let p = (el?.value ?? "").trim();
+  if (!p) {
+    try {
+      p = (sessionStorage.getItem("alfred_demo_pw") ?? "").trim();
+    } catch (_) {
+      /* ignore */
+    }
+    if (p && el) el.value = p;
+  }
+  return p;
+}
+
+function extraHeaders() {
+  if (!authRequired) return {};
+  const p = getDemoPasswordForRequest();
+  return p ? { "X-Demo-Password": p } : {};
+}
+
 async function fetchScenarios() {
-  const res = await fetch("/api/scenarios");
+  const res = await fetch("/api/scenarios", {
+    ...fetchOpts,
+    headers: extraHeaders(),
+  });
+  if (res.status === 401) throw new Error("demo_auth_required");
   return res.json();
 }
 
 async function runDecision(body) {
+  if (authRequired && !getDemoPasswordForRequest()) {
+    const wrap = $("#demo-password-bar-wrap");
+    wrap?.classList.remove("hidden");
+    wrap?.classList.remove("is-retracted");
+    const hint =
+      "Demo key is missing. Enter the key from the email in the field at the top, then click Apply.";
+    $("#demo-password-msg").textContent = hint;
+    return {
+      error: "demo_auth_required",
+      outcome: "refuse",
+      rationale: hint,
+    };
+  }
+
   const res = await fetch("/api/decide", {
+    ...fetchOpts,
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      ...extraHeaders(),
+    },
     body: JSON.stringify(body),
   });
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 401) {
+      const wrap = $("#demo-password-bar-wrap");
+      wrap?.classList.remove("is-retracted");
+      const hasKey = Boolean(getDemoPasswordForRequest());
+      const barMsg = hasKey
+        ? data.message ??
+          "That key was not accepted. Check the email, fix the field, then Apply again."
+        : "Click Show details, enter the demo key from the email, then click Apply.";
+      $("#demo-password-msg").textContent = barMsg;
+      return {
+        error: "demo_auth_required",
+        outcome: "refuse",
+        rationale:
+          data.message ??
+          (hasKey
+            ? "The server rejected this demo key. Confirm it matches the email, then Apply again."
+            : "No demo key was sent. Open Show details at the top, paste the key, Apply, then Run again."),
+      };
+    }
+    if (res.status === 429) {
+      return {
+        error: "rate_limited",
+        outcome: "refuse",
+        rationale: data.message ?? "Too many requests. Try again in a bit.",
+      };
+    }
+    return {
+      error: `http_${res.status}`,
+      outcome: "refuse",
+      rationale: data.message ?? res.statusText ?? "Request failed.",
+    };
+  }
+  return data;
 }
 
 // ── sidebar ───────────────────────────────────────────
@@ -803,23 +883,126 @@ function failureExplanation(kind) {
 }
 
 // ── init ──────────────────────────────────────────────
-async function init() {
-  scenarios = await fetchScenarios();
+/** About panel must work even before scenarios load (e.g. gated demo, wrong key). */
+function bindAboutToggle() {
+  const btn = $("#about-toggle");
+  const panel = $("#about-panel");
+  if (!btn || !panel || btn.dataset.bound === "1") return;
+  btn.dataset.bound = "1";
+  btn.addEventListener("click", () => {
+    const hidden = panel.classList.toggle("hidden");
+    const open = !hidden;
+    btn.classList.toggle("active", open);
+    btn.setAttribute("aria-expanded", String(open));
+    const label = open ? "Hide about this prototype" : "Show about this prototype";
+    btn.title = label;
+    btn.setAttribute("aria-label", label);
+  });
+}
+
+async function attemptLoadScenarios() {
+  $("#demo-password-msg").textContent = "";
+  if (authRequired && !getDemoPasswordForRequest()) {
+    $("#demo-password-bar-wrap")?.classList.remove("is-retracted");
+    $("#demo-password-msg").textContent =
+      "Enter the demo key from the email in the field above, then click Apply.";
+    return;
+  }
+  try {
+    scenarios = await fetchScenarios();
+    if (authRequired) {
+      try {
+        sessionStorage.setItem("alfred_demo_pw", getDemoPasswordForRequest());
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    if (!bootstrapped) {
+      bootstrapped = true;
+      bootstrapApp();
+    } else {
+      renderSidebar();
+    }
+    if (authRequired && scenarios.length > 0) {
+      $("#demo-password-bar-wrap")?.classList.add("is-retracted");
+    }
+  } catch (e) {
+    if (e.message === "demo_auth_required") {
+      $("#demo-password-bar-wrap")?.classList.remove("is-retracted");
+      $("#demo-password-msg").textContent = authRequired
+        ? getDemoPasswordForRequest()
+          ? "That key was not accepted. Check the email and try again, then Apply."
+          : "Enter the demo key from the email, then click Apply."
+        : "Could not load scenarios.";
+    } else {
+      $("#demo-password-msg").textContent = "Network error.";
+    }
+  }
+}
+
+/** Run / custom / JSON toggle work even if scenarios have not loaded yet (demo gate). */
+function bindCoreControlsOnce() {
+  const run = $("#run");
+  if (run && run.dataset.bound !== "1") {
+    run.dataset.bound = "1";
+    run.addEventListener("click", onRunClick);
+  }
+  const toggle = $("#toggle-edit");
+  if (toggle && toggle.dataset.bound !== "1") {
+    toggle.dataset.bound = "1";
+    toggle.addEventListener("click", onToggleEdit);
+  }
+  $$(".custom-list button").forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", onCustomNewClick);
+  });
+}
+
+async function bootstrapApp() {
   renderSidebar();
-  $("#run").addEventListener("click", onRunClick);
-  $("#toggle-edit").addEventListener("click", onToggleEdit);
   $$(".failure-list button").forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
     btn.dataset.category = "failure";
     btn.addEventListener("click", () => onFailureDemoClick(btn.dataset.failure));
   });
-  $$(".custom-list button").forEach((btn) => {
-    btn.addEventListener("click", onCustomNewClick);
-  });
-  $("#about-toggle").addEventListener("click", () => {
-    const panel = $("#about-panel");
-    const btn = $("#about-toggle");
-    const hidden = panel.classList.toggle("hidden");
-    btn.classList.toggle("active", !hidden);
-  });
 }
+
+async function init() {
+  bindAboutToggle();
+
+  let session;
+  try {
+    const res = await fetch("/api/session", fetchOpts);
+    session = await res.json();
+  } catch {
+    $("#demo-password-bar-wrap").classList.remove("hidden");
+    $("#demo-password-msg").textContent = "Could not reach the server.";
+    return;
+  }
+
+  authRequired = session.authRequired;
+  if (authRequired) {
+    $("#demo-password-bar-wrap").classList.remove("hidden");
+    try {
+      const saved = sessionStorage.getItem("alfred_demo_pw");
+      if (saved) $("#demo-password-bar").value = saved;
+    } catch (_) {
+      /* ignore */
+    }
+    $("#demo-password-apply").addEventListener("click", () => attemptLoadScenarios());
+    $("#demo-password-bar").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") attemptLoadScenarios();
+    });
+    $("#demo-password-expand").addEventListener("click", () => {
+      $("#demo-password-bar-wrap").classList.remove("is-retracted");
+    });
+  }
+
+  bindCoreControlsOnce();
+
+  await attemptLoadScenarios();
+}
+
 init();

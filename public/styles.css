@@ -190,7 +190,15 @@ header h1 {
   letter-spacing: -0.01em;
 }
 header .subtle { color: var(--muted); font-weight: 400; }
-.tagline { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.tagline {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
 
 main {
   display: grid;
@@ -798,27 +806,47 @@ pre.codeblock.prompt-block {
 }
 
 /* ── about panel ──────────────────────────────────────── */
-.about-icon {
+.about-toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin-left: 6px;
-  padding: 0;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 10px;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 6px;
   background: white;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
+  color: var(--blue);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   vertical-align: middle;
-  transition: background 80ms, color 80ms, border-color 80ms;
+  transition: background 80ms, color 80ms, border-color 80ms, box-shadow 80ms;
 }
-.about-icon:hover { background: var(--blue); color: white; border-color: var(--blue); }
-.about-icon.active { background: var(--blue); color: white; border-color: var(--blue); }
+.about-toggle:hover {
+  background: #f0f4fa;
+  border-color: var(--blue);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.about-toggle.active {
+  background: var(--blue);
+  color: white;
+  border-color: var(--blue);
+}
+.about-toggle.active:hover {
+  background: #1a4a8c;
+  border-color: #1a4a8c;
+  box-shadow: none;
+}
+.about-toggle-chevron {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.about-toggle.active .about-toggle-chevron {
+  transform: rotate(180deg);
+}
 .about-panel {
   margin-top: 10px;
   padding: 14px 16px;

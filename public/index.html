@@ -7,11 +7,49 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="demo-password-bar-wrap" class="demo-password-bar hidden">
+    <div class="demo-password-expanded">
+      <p class="demo-password-headline">Read this first.</p>
+      <p class="demo-password-notice">
+        The demo password is in the email I sent. Nothing below will work until you enter it and click Apply. I cannot leave this API open to the public internet without this gate.
+      </p>
+      <div class="demo-password-inner">
+        <label class="demo-password-label" for="demo-password-bar">Demo password</label>
+        <input
+          id="demo-password-bar"
+          type="password"
+          autocomplete="current-password"
+          placeholder="From the email, then Apply"
+          aria-describedby="demo-password-static demo-password-msg"
+        />
+        <button type="button" id="demo-password-apply" class="demo-password-apply">Apply</button>
+      </div>
+      <p id="demo-password-static" class="visually-hidden">
+        Demo password was sent by email. Required before Run or scenarios load.
+      </p>
+      <p id="demo-password-msg" class="demo-password-msg" role="status" aria-live="polite"></p>
+    </div>
+    <div class="demo-password-compact hidden" aria-live="polite">
+      <span class="demo-password-compact-icon" aria-hidden="true">✓</span>
+      <span class="demo-password-compact-text">Key matches · demo ready</span>
+      <button type="button" id="demo-password-expand" class="demo-password-expand-btn">Show details</button>
+    </div>
+  </div>
+
   <header>
     <h1>alfred_ <span class="subtle">Execution Decision Layer</span></h1>
     <p class="tagline">
       Pick a scenario. Hit run. Look under the hood.
-      <button id="about-toggle" type="button" class="about-icon" title="About this prototype" aria-label="About this prototype">i</button>
+      <button
+        id="about-toggle"
+        type="button"
+        class="about-toggle"
+        aria-expanded="false"
+        aria-controls="about-panel"
+      >
+        <span class="about-toggle-chevron" aria-hidden="true">▾</span>
+        About this prototype
+      </button>
     </p>
     <div id="about-panel" class="about-panel hidden">
       <h3>About this prototype</h3>
