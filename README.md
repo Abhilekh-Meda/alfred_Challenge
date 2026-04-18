@@ -33,7 +33,6 @@ Why this split:
 - The decision layer *owns* the task schema. The context layer *populates* it. That interface contract is the thing worth getting right, and it lets the two layers evolve independently.
 - Designing from the decision layer's perspective forces a clear statement of "what does this component actually need to make a good decision?" That question alone rules out a lot of hand-wavy context blobs.
 
-If you open the UI and click the `i` in the header, you'll see the same framing in-app so reviewers who don't read the repo still have it.
 
 ---
 
@@ -42,7 +41,7 @@ If you open the UI and click the `i` in the header, you'll see the same framing 
 Four stages per request:
 
 ```
-Stage 1  classify action type              small LLM
+Stage 1  classify action type              small LLM / tiny local classifier model
 Stage 2  extract params / risk / policy    larger LLM, targeted schema
 Stage 3  deterministic signals + routing   pure code
 Stage 4  rationale synthesis               small LLM
@@ -140,7 +139,7 @@ Default-safe posture: every failure path routes to `refuse`, never to silent exe
 
 | Failure | What happens | How to see it |
 |---|---|---|
-| **LLM timeout** | 3 attempts with exponential backoff (1s, 2s) and a small temperature bump per retry. Temperature bump breaks deterministic-failure loops where the same prompt hits the same timeout cause. On exhaustion, typed error to `refuse`. | "Simulated timeout" in the UI forces a 50ms timeout and shows a live animated timeline of the real retry path. |
+| **LLM timeout** | 3 attempts with exponential backoff (1s, 2s) and a small temperature bump per retry. Temperature bump breaks known failure mode of low tempareture LLM outputs involving repeating characters infinitely. On exhaustion, typed error to `refuse`. | "Simulated timeout" in the UI forces a 50ms timeout and shows a live animated timeline of the real retry path. |
 | **Malformed output** | Zod validation fails at parse. Typed `malformed_output` error to `refuse`. | "Simulated malformed output" injects the error at the server boundary so you can see the UI's failure state without waiting for a real bad response. |
 | **Missing critical context** | Pipeline validates at entry. Short-circuits to `refuse` without calling the LLM. Both trace stages render "did not run". | "Missing context" demo submits empty input. |
 
@@ -153,7 +152,7 @@ All three demos are wired into the sidebar under "Failure demos" and animate a s
 Being explicit about the edges:
 
 - **No real context layer.** No retrieval, no persistence, no cross-session memory. Preloaded scenarios hand in pre-shaped inputs.
-- **`entity_id` is a descriptive string** like "email from Sarah at Acme, Tuesday, subject: Renewal". Shows anchoring to a specific object without requiring actual data access. In prod this becomes a real ID via a lookup step.
+- **`entity_id` is a descriptive string** like "email from Sarah at Acme, Tuesday, subject: Renewal". Shows anchoring to a specific object without requiring actual data access. In prod this becomes a real ID via a lookup and confirmation of entity existence step.
 - **Single policy violation at a time.** The schema has one `policy_violation` triplet, not an array. Multi-violation support is a schema change when we need it.
 - **Models are proxies.** `gpt-4o-mini` and `gpt-4o` stand in for what would actually be a tiny local classifier plus Sonnet 4.6.
 - **No user-feedback learning loop.** Accept/reject/clarify outcomes are not tracked and thresholds are global, not per-user.
